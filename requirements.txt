@@ -1,0 +1,5 @@
+google-cloud-pubsub
+grpcio-tools
+
+flask
+gunicorn

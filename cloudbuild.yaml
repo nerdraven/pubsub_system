@@ -1,0 +1,58 @@
+steps:
+
+- id: Pull Cache
+  name: "gcr.io/cloud-builders/docker"
+  args:
+  - pull
+  - "gcr.io/$PROJECT_ID/publisher"
+
+- id: Build publisher
+  name: "gcr.io/cloud-builders/docker"
+  args:
+  - build
+  - "--tag=gcr.io/$PROJECT_ID/publisher"
+  - "--file=./publisher.Dockerfile"
+  - --cache-from=gcr.io/$PROJECT_ID/publisher
+  - .
+
+- id: Push publisher image
+  name: "gcr.io/cloud-builders/docker"
+  args:
+  - push
+  - "gcr.io/$PROJECT_ID/publisher"
+
+- id: Deploy publisher
+  name: "gcr.io/cloud-builders/gcloud"
+  args:
+  - run
+  - deploy
+  - pubsub-publisher
+  - --set-env-vars=TOPIC_ID=${_TOPIC_ID},PROJECT_ID=${_PROJECT_ID}
+  - --image=gcr.io/$PROJECT_ID/publisher
+  - --region=us-central1
+  - --allow-unauthenticated
+
+- id: Build subscriber
+  name: "gcr.io/cloud-builders/docker"
+  args:
+  - build
+  - --tag=gcr.io/$PROJECT_ID/subscriber
+  - --file=./subscriber.Dockerfile
+  - --cache-from=gcr.io/$PROJECT_ID/publisher
+  - .
+
+- id: Push subscriber image
+  name: "gcr.io/cloud-builders/docker"
+  args:
+  - push
+  - "gcr.io/$PROJECT_ID/subscriber"
+
+- id: Deploy subscriber
+  name: "gcr.io/cloud-builders/gcloud"
+  args:
+  - run
+  - deploy
+  - pubsub-subscriber
+  - --image=gcr.io/$PROJECT_ID/subscriber
+  - --region=us-central1
+  - --allow-unauthenticated
